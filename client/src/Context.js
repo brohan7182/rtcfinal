@@ -4,10 +4,9 @@ import Peer from 'simple-peer';
 
 const SocketContext = createContext();
 
-const socket = io('https://rtc-final-server-production.up.railway.app');
-// const socket = io('https://rtcfinal-server.vercel.app/');
-// const socket = io('http://localhost:5000');
-// const socket = io('https://warm-wildwood-81069.herokuapp.com');
+const socket = io('https://rtc-final-server-production.up.railway.app', {
+  withCredentials: true, // Allow credentials to be sent in cross-origin requests
+});
 
 const ContextProvider = ({ children }) => {
   const [callAccepted, setCallAccepted] = useState(false);
@@ -25,15 +24,12 @@ const ContextProvider = ({ children }) => {
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then((currentStream) => {
         setStream(currentStream);
-
         myVideo.current.srcObject = currentStream;
       });
 
     socket.on('me', (id) => setMe(id));
 
     socket.on('callUser', ({ from, name: callerName, signal }) => {
-      console.log("Caller name", name)
-      console.log("from user", from)
       setCall({ isReceivingCall: true, from, name: callerName, signal });
     });
   }, []);
@@ -69,7 +65,6 @@ const ContextProvider = ({ children }) => {
 
     socket.on('callAccepted', (signal) => {
       setCallAccepted(true);
-
       peer.signal(signal);
     });
 
@@ -79,9 +74,11 @@ const ContextProvider = ({ children }) => {
   const leaveCall = () => {
     setCallEnded(true);
 
-    connectionRef.current.destroy();
+    if (connectionRef.current) {
+      connectionRef.current.destroy();
+    }
 
-    window.location.reload();
+    window.location.reload(); // Refresh the page to clear the call state
   };
 
   return (
@@ -105,4 +102,4 @@ const ContextProvider = ({ children }) => {
   );
 };
 
-export { ContextProvider, SocketContext };  
+export { ContextProvider, SocketContext };
