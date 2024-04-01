@@ -5,8 +5,8 @@ const cors = require("cors");
 
 const io = require("socket.io")(server, {
     cors: {
-        origin: "*",//star rakh
-        // origin: "https://rtcfinal.vercel.app",
+        // origin: "*",//star rakh
+        origin: "https://rtcfinal.vercel.app",
         // origin: "https://rtcfinal.vercel.app",
         // origin: ["http://localhost:3000" , "https://rtcfinal.vercel.app/"], // Allow requests from localhost:3000
         methods: ["GET", "POST"]
