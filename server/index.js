@@ -6,17 +6,12 @@ const cors = require("cors");
 const io = require("socket.io")(server, {
     cors: {
         origin: ["https://rtcfinal.vercel.app", "http://localhost:3000"], // Allow requests from these origins
-        methods: ["GET", "POST"]
-        // origin: ["http://localhost:3000", "https://rtcfinal.vercel.app"],
-        // // origin: "*",
-        // origin: "https://rtcfinal.vercel.app",
-        // // origin: "https://rtcfinal.vercel.app",
-        // // origin: ["http://localhost:3000" , "https://rtcfinal.vercel.app/"], // Allow requests from localhost:3000
-        // methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
+        credentials: true // Enable credentials
     }
 });
 
-app.use(cors()); // Enable CORS for all routes
+app.use(cors({ credentials: true })); // Enable CORS for all routes and set credentials to true
 
 const PORT = process.env.PORT || 5000;
 
