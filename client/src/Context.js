@@ -4,8 +4,11 @@ import Peer from 'simple-peer';
 
 const SocketContext = createContext();
 
+// const socket = io('http://localhost:8000', {
+//   withCredentials: true, // Allow credentials to be sent in cross-origin requests
+// });
 const socket = io('https://rtc-final-server-production.up.railway.app', {
-  // withCredentials: true, // Allow credentials to be sent in cross-origin requests
+  withCredentials: true, // Allow credentials to be sent in cross-origin requests
 });
 
 const ContextProvider = ({ children }) => {

@@ -5,7 +5,7 @@ const cors = require("cors");
 
 const io = require("socket.io")(server, {
     cors: {
-        origin: ["https://rtcfinal.vercel.app", "http://localhost:3000"], // Allow requests from these origins
+        origin: ["http://localhost:3000"], // Allow requests from these origins
         methods: ["GET", "POST"],
         credentials: true // Enable credentials
     }
@@ -13,7 +13,7 @@ const io = require("socket.io")(server, {
 
 app.use(cors({ credentials: true })); // Enable CORS for all routes and set credentials to true
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 
 app.get('/', (req, res) => {
     res.send('Running');
