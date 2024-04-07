@@ -43,7 +43,7 @@ const App = () => {
     let stream;
 
     try {
-      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       
       const options = {
         type: 'video',
