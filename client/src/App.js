@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Typography, AppBar, Button } from '@material-ui/core';
+import { Typography, AppBar, Button, TextField, Grid } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import RecordRTC from 'recordrtc'; // Import RecordRTC library
 
@@ -31,12 +31,25 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     width: '100%',
   },
+  chatContainer: {
+    width: '100%',
+    maxHeight: '300px',
+    overflowY: 'auto',
+    padding: '10px',
+    backgroundColor: '#f2f2f2',
+    borderRadius: '5px',
+  },
+  chatInput: {
+    marginTop: '10px',
+  },
 }));
 
 const App = () => {
   const classes = useStyles();
   const [recording, setRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState('');
   const mediaRecorderRef = useRef(null);
 
   const startRecording = async () => {
@@ -83,6 +96,13 @@ const App = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleSendMessage = () => {
+    if (messageInput.trim() !== '') {
+      setChatMessages([...chatMessages, { sender: 'Me', message: messageInput }]);
+      setMessageInput('');
+    }
+  };
+
   return (
     <div className={classes.wrapper}>
       <AppBar className={classes.appBar} position="static" color="inherit">
@@ -99,6 +119,25 @@ const App = () => {
         {recordedBlob && (
           <Button variant="contained" color="primary" onClick={() => downloadRecording(recordedBlob)}>Download Recording</Button>
         )}
+        <div className={classes.chatContainer}>
+          {chatMessages.map((msg, index) => (
+            <Typography key={index}><strong>{msg.sender}:</strong> {msg.message}</Typography>
+          ))}
+        </div>
+        <Grid container spacing={2} alignItems="center" className={classes.chatInput}>
+          <Grid item xs={8}>
+            <TextField
+              variant="outlined"
+              fullWidth
+              label="Type your message"
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={4}>
+            <Button variant="contained" color="primary" onClick={handleSendMessage}>Send</Button>
+          </Grid>
+        </Grid>
       </Sidebar>
     </div>
   );
