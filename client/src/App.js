@@ -44,7 +44,7 @@ const App = () => {
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      
+
       const options = {
         type: 'video',
         mimeType: 'video/webm',
