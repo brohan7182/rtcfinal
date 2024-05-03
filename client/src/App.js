@@ -1,7 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { Typography, AppBar, Button, TextField, Grid } from '@material-ui/core';
+import React, { useState, useRef, useEffect } from 'react';
+import { Typography, AppBar, Button, TextField, Grid, FormControl, InputLabel, Select, MenuItem } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import RecordRTC from 'recordrtc'; // Import RecordRTC library
 
 import VideoPlayer from './components/VideoPlayer';
 import Sidebar from './components/Sidebar';
@@ -22,14 +21,15 @@ const useStyles = makeStyles((theme) => ({
       width: '90%',
     },
   },
-  image: {
-    marginLeft: '15px',
-  },
   wrapper: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     width: '100%',
+  },
+  formControl: {
+    margin: theme.spacing(1),
+    minWidth: 200, // Adjusted width
   },
   chatContainer: {
     width: '100%',
@@ -47,28 +47,47 @@ const useStyles = makeStyles((theme) => ({
 const App = () => {
   const classes = useStyles();
   const [recording, setRecording] = useState(false);
-  const [recordedBlob, setRecordedBlob] = useState(null);
+  const [recordedChunks, setRecordedChunks] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
+  const [selectedMic, setSelectedMic] = useState('');
+  const [audioDevices, setAudioDevices] = useState([]);
   const mediaRecorderRef = useRef(null);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputDevices = devices.filter(device => device.kind === 'audioinput');
+        setAudioDevices(audioInputDevices);
+      } catch (error) {
+        console.error('Error fetching audio devices:', error);
+      }
+    };
+
+    fetchDevices();
+  }, []);
 
   const startRecording = async () => {
-    let stream;
-
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: selectedMic } });
 
-      const options = {
-        type: 'video',
-        mimeType: 'video/webm',
-        audioBitsPerSecond: 128000,
-        videoBitsPerSecond: 2500000,
-        bitsPerSecond: 2628000,
+      const mixedStream = new MediaStream();
+      screenStream.getVideoTracks().forEach(track => mixedStream.addTrack(track));
+      audioStream.getAudioTracks().forEach(track => mixedStream.addTrack(track));
+
+      const recorder = new MediaRecorder(mixedStream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = function (event) {
+        if (event.data.size > 0) {
+          setRecordedChunks([...recordedChunks, event.data]);
+        }
       };
 
-      const recorder = RecordRTC(stream, options);
-      mediaRecorderRef.current = recorder;
-      recorder.startRecording();
+      recorder.start();
       setRecording(true);
     } catch (err) {
       console.error('Error accessing media devices:', err);
@@ -77,15 +96,14 @@ const App = () => {
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current.stopRecording(() => {
-      const blob = mediaRecorderRef.current.getBlob();
-      setRecordedBlob(blob);
-      setRecording(false);
-      downloadRecording(blob);
-    });
+    mediaRecorderRef.current.stop();
+    setRecording(false);
   };
 
-  const downloadRecording = (blob) => {
+  const downloadRecording = () => {
+    if (recordedChunks.length === 0) return;
+
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     document.body.appendChild(a);
@@ -103,22 +121,46 @@ const App = () => {
     }
   };
 
+  const handleMicChange = (event) => {
+    setSelectedMic(event.target.value);
+  };
+
   return (
     <div className={classes.wrapper}>
       <AppBar className={classes.appBar} position="static" color="inherit">
         <Typography variant="h2" align="center">Screen Recorder</Typography>
       </AppBar>
-      <VideoPlayer />
+      <VideoPlayer ref={videoRef} />
       <Sidebar>
         <Notifications />
-        {recording ? (
-          <Button variant="contained" color="secondary" onClick={stopRecording}>Stop Recording</Button>
-        ) : (
-          <Button variant="contained" color="primary" onClick={startRecording}>Start Recording</Button>
-        )}
-        {recordedBlob && (
-          <Button variant="contained" color="primary" onClick={() => downloadRecording(recordedBlob)}>Download Recording</Button>
-        )}
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <FormControl className={classes.formControl}>
+              <InputLabel id="mic-select-label">Select Microphone</InputLabel>
+              <Select
+                labelId="mic-select-label"
+                id="mic-select"
+                value={selectedMic}
+                onChange={handleMicChange}
+              >
+                <MenuItem value="">Default</MenuItem>
+                {audioDevices.map((device, index) => (
+                  <MenuItem key={index} value={device.deviceId}>{device.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            {recording ? (
+              <Button variant="contained" color="secondary" onClick={stopRecording}>Stop Recording</Button>
+            ) : (
+              <Button variant="contained" color="primary" onClick={startRecording}>Start Recording</Button>
+            )}
+            {recordedChunks.length > 0 && (
+              <Button variant="contained" color="primary" onClick={downloadRecording}>Download Recording</Button>
+            )}
+          </Grid>
+        </Grid>
         <div className={classes.chatContainer}>
           {chatMessages.map((msg, index) => (
             <Typography key={index}><strong>{msg.sender}:</strong> {msg.message}</Typography>

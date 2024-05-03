@@ -3,13 +3,7 @@ import { io } from 'socket.io-client';
 import Peer from 'simple-peer';
 
 const SocketContext = createContext();
-//for locally
-// const socket = io('http://localhost:8000', {
-//   withCredentials: true, // Allow credentials to be sent in cross-origin requests
-// });
 
-
-//for deployed server
 const socket = io('https://rtc-final-server-production.up.railway.app', {
   withCredentials: true, // Allow credentials to be sent in cross-origin requests
 });
@@ -68,6 +62,8 @@ const ContextProvider = ({ children }) => {
     peer.on('stream', (currentStream) => {
       userVideo.current.srcObject = currentStream;
     });
+
+    peer.addStream(stream); // Add the audio stream to the peer connection
 
     socket.on('callAccepted', (signal) => {
       setCallAccepted(true);
