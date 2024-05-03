@@ -5,7 +5,7 @@ import Peer from 'simple-peer';
 const SocketContext = createContext();
 
 const socket = io('https://rtc-final-server-production.up.railway.app', {
-  withCredentials: true, // Allow credentials to be sent in cross-origin requests
+  withCredentials: true,
 });
 
 const ContextProvider = ({ children }) => {
@@ -25,6 +25,9 @@ const ContextProvider = ({ children }) => {
       .then((currentStream) => {
         setStream(currentStream);
         myVideo.current.srcObject = currentStream;
+      })
+      .catch((error) => {
+        console.error('Error accessing media devices:', error);
       });
 
     socket.on('me', (id) => setMe(id));
@@ -55,6 +58,10 @@ const ContextProvider = ({ children }) => {
   const callUser = (id) => {
     const peer = new Peer({ initiator: true, trickle: false, stream });
 
+    peer.on('error', (error) => {
+      console.error('Peer error:', error);
+    });
+
     peer.on('signal', (data) => {
       socket.emit('callUser', { userToCall: id, signalData: data, from: me, name });
     });
@@ -62,8 +69,6 @@ const ContextProvider = ({ children }) => {
     peer.on('stream', (currentStream) => {
       userVideo.current.srcObject = currentStream;
     });
-
-    peer.addStream(stream); // Add the audio stream to the peer connection
 
     socket.on('callAccepted', (signal) => {
       setCallAccepted(true);
@@ -74,13 +79,18 @@ const ContextProvider = ({ children }) => {
   };
 
   const leaveCall = () => {
-    setCallEnded(true);
-
     if (connectionRef.current) {
       connectionRef.current.destroy();
     }
 
-    window.location.reload(); // Refresh the page to clear the call state
+    setCallEnded(true);
+    setCallAccepted(false);
+    setStream(null);
+    setName('');
+
+    // Additional cleanup actions if needed
+
+    // Instead of refreshing the page, you can reset the call state here
   };
 
   return (

@@ -78,12 +78,19 @@ const App = () => {
       screenStream.getVideoTracks().forEach(track => mixedStream.addTrack(track));
       audioStream.getAudioTracks().forEach(track => mixedStream.addTrack(track));
 
+      // Stop and reset mediaRecorderRef.current if it's already recording
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+        setRecording(false);
+        setRecordedChunks([]);
+      }
+
       const recorder = new MediaRecorder(mixedStream);
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = function (event) {
         if (event.data.size > 0) {
-          setRecordedChunks([...recordedChunks, event.data]);
+          setRecordedChunks(prevChunks => [...prevChunks, event.data]);
         }
       };
 
